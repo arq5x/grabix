@@ -33,3 +33,8 @@ Here's a brief example using the ``simrep.chr1.bed`` file provided in the reposi
 	chr1	421245	421285	trf	64
 	chr1	422395	422435	trf	80
 	chr1	422560	422588	trf	56
+	
+You can also use ``grabix`` to extract random lines from the file
+
+	# extract 10 randome lines from the file using reservoir sampling
+	grabix random simrep.chr1.bed.gz 10

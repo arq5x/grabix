@@ -201,6 +201,67 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
     return EXIT_SUCCESS;
 }
 
+
+int random(string bgzf_file, size_t K)
+{
+    // load index into vector of offsets
+    index_info index;
+    load_index(bgzf_file, index);
+
+    if (K > index.num_lines) 
+    {
+        cerr << "[grabix] warning: requested more lines than in the file." << endl;
+        exit(1);
+    }
+    else {
+        // load the BGZF file
+        BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
+        if (bgzf_fp == NULL)
+        {
+            cerr << "[grabix] could not open file:" << bgzf_file << endl;
+            exit (1);
+        }
+        
+        // seed our randome number generator
+        size_t seed = (unsigned)time(0)+(unsigned)getpid();
+        srand(seed);
+        
+        // reservoir sample
+        size_t s, N, result_size;
+        vector<string> sample;
+        string line;
+        while (bgzf_check_EOF(bgzf_fp) == 1)
+        {
+            // grab the next line and store the offset
+            // bgzf_getline(bgzf_fp, '\n', line);
+            bgzf_getline(bgzf_fp, line);
+            N++;
+            
+            if (line.empty())
+                break;
+
+            if (result_size < K)
+            {
+                sample.push_back(line);
+                result_size++;
+            }
+            else 
+            {
+                s = (int) ((double)rand()/(double)RAND_MAX * N);
+                if (s < K)
+                    sample[s] = line;
+            }
+        }
+        bgzf_close(bgzf_fp);
+        
+        // report the sample
+        for (size_t i = 0; i < sample.size(); ++i)
+            printf("%s\n", sample[i].c_str());
+
+    }
+    return EXIT_SUCCESS;
+}
+
 int main (int argc, char **argv)
 {
     if (argc == 1) { return usage(); }
@@ -222,6 +283,11 @@ int main (int argc, char **argv)
                 to_line = atoi(argv[4]);
 
             grab(bgzf_file, from_line, to_line);
+        }
+        else if (sub_command == "random")
+        {
+            size_t N = atoi(argv[3]);
+            random(bgzf_file, N);
         }
     }
 
