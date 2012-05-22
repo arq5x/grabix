@@ -12,8 +12,8 @@ using namespace std;
 #define CHUNK_SIZE 10000
 
 struct index_info {
-    vector<size_t> chunk_offsets;
-    size_t num_lines;
+    vector<int64_t> chunk_offsets;
+    int64_t num_lines;
 };
 
 int usage()
@@ -37,8 +37,14 @@ int usage()
     return EXIT_SUCCESS;
 }
 
-// from http://biostars.org/post/show/13595/
-// random-access-of-lines-in-a-compressed-file-having-a-custom-tabulated-format/#13616
+/*
+Helper function to allow reading a single line
+from the BGZF file.
+
+Based on:
+http://biostars.org/post/show/13595/
+random-access-of-lines-in-a-compressed-file-having-a-custom-tabulated-format/#13616
+*/
 void bgzf_getline (BGZF * stream, string & line)
 {
     line.erase();
@@ -68,6 +74,10 @@ void bgzf_getline (BGZF * stream, string & line)
     free (p);
 }
 
+/*
+Create aa gbi index for the file to facilitate
+random access via the BGZF seek utility
+*/
 int create_grabix_index(string bgzf_file)
 {
     BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
@@ -77,17 +87,15 @@ int create_grabix_index(string bgzf_file)
         exit (1);
     }
 
-    //kstring_t *line = new kstring_t;
     string line;
-    size_t offset;
+    int64_t offset;
     size_t chunk_count = 0;
-    size_t total_lines = 0;
-    vector<size_t> chunk_positions;
+    int64_t total_lines = 0;
+    vector<int64_t> chunk_positions;
     chunk_positions.push_back (0);
     while (bgzf_check_EOF(bgzf_fp) == 1)
     {
         // grab the next line and store the offset
-        // bgzf_getline(bgzf_fp, '\n', line);
         bgzf_getline(bgzf_fp, line);
         offset = bgzf_tell (bgzf_fp);
         chunk_count++;
@@ -119,6 +127,10 @@ int create_grabix_index(string bgzf_file)
 }
 
 
+/*
+Load an existing gbi index for the file to facilitate
+random access via the BGZF seek utility
+*/
 void load_index(string bgzf_file, index_info &index)
 {
     string index_file_name = bgzf_file + ".gbi";
@@ -132,25 +144,29 @@ void load_index(string bgzf_file, index_info &index)
     else {
         string line;
         getline (index_file, line);
-        index.num_lines = atoi(line.c_str());
+        index.num_lines = atol(line.c_str());
 
         while (index_file >> line)
         {
-            index.chunk_offsets.push_back(atoi(line.c_str()));
+            index.chunk_offsets.push_back(atol(line.c_str()));
         }
     }
     index_file.close();
 }
 
+
+/*
+Extract lines [FROM, TO] from file.
+*/
 int grab(string bgzf_file, size_t from_line, size_t to_line)
 {
     // load index into vector of offsets
     index_info index;
     load_index(bgzf_file, index);
 
-    if ((from_line > index.num_lines) 
+    if (((int) from_line > index.num_lines) 
         || 
-        (to_line > index.num_lines))
+        ((int) to_line > index.num_lines))
     {
         cerr << "[grabix] requested lines exceed the number of lines in the file." << endl;
         exit(1);
@@ -175,15 +191,13 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         }
         // easier to work in 0-based space
         size_t from_line_0  = from_line - 1;
-        size_t to_line_0    = to_line - 1;
         // get the chunk index for the requested line
         size_t requested_chunk = from_line_0 / CHUNK_SIZE;
         // derive the first line in that chunk
         size_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
-
+        
         // jump to the correct offset for the relevant chunk
-        // and fast forward until we find the requested line 
-        // kstring_t *line = new kstring_t;       
+        // and fast forward until we find the requested line    
         string line;
         bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
         while (chunk_line_start <= from_line_0)
@@ -193,25 +207,27 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         }
 
         // now, print each line until we reach the end of the requested block
-        printf("%s\n", line.c_str());
-        while (chunk_line_start <= to_line_0)
+        do
         {
-            bgzf_getline (bgzf_fp, line);
             printf("%s\n", line.c_str());
+            bgzf_getline (bgzf_fp, line);
             chunk_line_start++;
-        }
+        } while (chunk_line_start <= to_line);
     }
     return EXIT_SUCCESS;
 }
 
 
-int random(string bgzf_file, size_t K)
+/*
+Extract K random lines from file using reservoir sampling
+*/
+int random(string bgzf_file, uint64_t K)
 {
     // load index into vector of offsets
     index_info index;
     load_index(bgzf_file, index);
 
-    if (K > index.num_lines) 
+    if ((int64_t) K > index.num_lines) 
     {
         cerr << "[grabix] warning: requested more lines than in the file." << endl;
         exit(1);
@@ -225,7 +241,7 @@ int random(string bgzf_file, size_t K)
             exit (1);
         }
         
-        // seed our randome number generator
+        // seed our random number generator
         size_t seed = (unsigned)time(0)+(unsigned)getpid();
         srand(seed);
         
@@ -236,7 +252,6 @@ int random(string bgzf_file, size_t K)
         while (bgzf_check_EOF(bgzf_fp) == 1)
         {
             // grab the next line and store the offset
-            // bgzf_getline(bgzf_fp, '\n', line);
             bgzf_getline(bgzf_fp, line);
             N++;
             
