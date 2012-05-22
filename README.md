@@ -3,7 +3,8 @@ grabix - a wee tool for random access into BGZF files.
 
 ``grabix`` leverages the fantastic BGZF library in ``samtools`` to provide random access into
 text files that have been compressed with ``bgzip``.  ``grabix`` creates it's own index (.gbi)
-of the bgzipped file.  Once index, one can extract arbitrary lines from the file with the ``grab`` command.
+of the bgzipped file.  Once indexed, one can extract arbitrary lines from the file with the ``grab`` command.  
+Or choose random lines with the, well, ``random`` command.
 
 There's a ton of room for improvement, but I needed something quickly in support of a side project.
 
