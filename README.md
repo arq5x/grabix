@@ -22,3 +22,14 @@ Here's a brief example using the ``simrep.chr1.bed`` file provided in the reposi
 	
 	# 4. extract the 100th through 110th lines in the file.
 	grabix grab simrep.chr1.bed.gz 100 110
+	chr1	401285	401444	trf	218
+	chr1	401573	401748	trf	280
+	chr1	404661	404707	trf	92
+	chr1	406202	406274	trf	76
+	chr1	406227	406286	trf	77
+	chr1	406776	406819	trf	68
+	chr1	409821	409866	trf	51
+	chr1	409865	409900	trf	52
+	chr1	421245	421285	trf	64
+	chr1	422395	422435	trf	80
+	chr1	422560	422588	trf	56

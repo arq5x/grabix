@@ -35,7 +35,7 @@ int usage()
 }
 
 // from http://biostars.org/post/show/13595/ \
-   random-access-of-lines-in-a-compressed-file-having-a-custom-tabulated-format/#13616
+// random-access-of-lines-in-a-compressed-file-having-a-custom-tabulated-format/#13616
 void bgzf_getline (BGZF * stream, string & line)
 {
     line.erase();
