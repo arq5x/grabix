@@ -73,7 +73,7 @@ int create_grabix_index(string bgzf_file)
         cerr << "[grabix] could not open file:" << bgzf_file << endl;
         exit (1);
     }
-    
+
     //kstring_t *line = new kstring_t;
     string line;
     size_t offset;
@@ -100,18 +100,18 @@ int create_grabix_index(string bgzf_file)
         }
     }
     bgzf_close(bgzf_fp);
-    
+
     // write the index
     string index_file_name = bgzf_file + ".gbi";
-	ofstream index_file(index_file_name.c_str(), ios::out);
-	
+    ofstream index_file(index_file_name.c_str(), ios::out);
+
     index_file << total_lines << endl;
     for (size_t i = 0; i < chunk_positions.size(); ++i)
     {
         index_file << chunk_positions[i] << endl;
     }
     index_file.close();
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -119,24 +119,24 @@ int create_grabix_index(string bgzf_file)
 void load_index(string bgzf_file, index_info &index)
 {
     string index_file_name = bgzf_file + ".gbi";
-	// open the index file for reading
-	ifstream index_file(index_file_name.c_str(), ios::in);
+    // open the index file for reading
+    ifstream index_file(index_file_name.c_str(), ios::in);
 
-	if ( !index_file ) {
-		cerr << "[grabix] coould not find index file: " << index_file_name << ". Exiting!" << endl;
-		exit (1);
-	}
-	else {
+    if ( !index_file ) {
+        cerr << "[grabix] coould not find index file: " << index_file_name << ". Exiting!" << endl;
+        exit (1);
+    }
+    else {
         string line;
-	    getline (index_file, line);
+        getline (index_file, line);
         index.num_lines = atoi(line.c_str());
-	    
-	    while (index_file >> line)
-	    {
+
+        while (index_file >> line)
+        {
             index.chunk_offsets.push_back(atoi(line.c_str()));
-	    }
-	}
-	index_file.close();
+        }
+    }
+    index_file.close();
 }
 
 int grab(string bgzf_file, size_t from_line, size_t to_line)
@@ -144,9 +144,9 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
     // load index into vector of offsets
     index_info index;
     load_index(bgzf_file, index);
-    
+
     if ((from_line > index.num_lines) 
-         || 
+        || 
         (to_line > index.num_lines))
     {
         cerr << "[grabix] requested lines exceed the number of lines in the file." << endl;
@@ -188,7 +188,7 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
             bgzf_getline(bgzf_fp, line);
             chunk_line_start++;
         }
-        
+
         // now, print each line until we reach the end of the requested block
         printf("%s\n", line.c_str());
         while (chunk_line_start <= to_line_0)
@@ -208,7 +208,7 @@ int main (int argc, char **argv)
     {
         // create input file for the purpose of the example
         string bgzf_file = argv[2];
-        
+
         string sub_command = argv[1];
         if (sub_command == "index")
         {
@@ -220,10 +220,10 @@ int main (int argc, char **argv)
             size_t to_line = from_line;
             if (argc == 5)
                 to_line = atoi(argv[4]);
-            
+
             grab(bgzf_file, from_line, to_line);
         }
     }
-    
+
     return EXIT_SUCCESS;
 }
