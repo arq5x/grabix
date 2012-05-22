@@ -31,6 +31,9 @@ int usage()
     cout << "       # extract the 100th through the 200th lines." << endl;
     cout << "       grabix grab big.vcf.gz 100 200 " << endl;
     cout << endl;
+    cout << "       # extract the 100 random lines." << endl;
+    cout << "       grabix random big.vcf.gz 100" << endl;
+    cout << endl;
     return EXIT_SUCCESS;
 }
 
