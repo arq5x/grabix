@@ -3,7 +3,9 @@
 #include <fstream>
 #include <vector>
 using namespace std;
+
 #include "bgzf.h"
+
 
 // we only want to store the offset for every 10000th
 // line. otherwise, were we to store the position of every
@@ -12,6 +14,7 @@ using namespace std;
 #define CHUNK_SIZE 10000
 
 struct index_info {
+    int64_t header_end;
     vector<int64_t> chunk_offsets;
     int64_t num_lines;
 };
@@ -75,7 +78,7 @@ void bgzf_getline (BGZF * stream, string & line)
 }
 
 /*
-Create aa gbi index for the file to facilitate
+Create a gbi index for the file to facilitate
 random access via the BGZF seek utility
 */
 int create_grabix_index(string bgzf_file)
@@ -86,13 +89,32 @@ int create_grabix_index(string bgzf_file)
         cerr << "[grabix] could not open file:" << bgzf_file << endl;
         exit (1);
     }
-
+    
+    // create an index for writing
+    string index_file_name = bgzf_file + ".gbi";
+    ofstream index_file(index_file_name.c_str(), ios::out);
+    
+    // add the offset for the end of the header to the index
     string line;
-    int64_t offset;
+    int64_t prev_offset, offset = 0;
+    while (bgzf_check_EOF(bgzf_fp) == 1)
+    {
+        bgzf_getline(bgzf_fp, line);
+        offset = bgzf_tell (bgzf_fp);
+        if (line.find("#") != 0) {
+            break;
+        }
+        prev_offset = offset;
+    }
+    index_file << prev_offset << endl;
+    
+
+    // add the offsets for each CHUNK_SIZE
+    // set of records to the index
     size_t chunk_count = 0;
     int64_t total_lines = 0;
     vector<int64_t> chunk_positions;
-    chunk_positions.push_back (0);
+    chunk_positions.push_back (prev_offset);
     while (bgzf_check_EOF(bgzf_fp) == 1)
     {
         // grab the next line and store the offset
@@ -112,9 +134,7 @@ int create_grabix_index(string bgzf_file)
     }
     bgzf_close(bgzf_fp);
 
-    // write the index
-    string index_file_name = bgzf_file + ".gbi";
-    ofstream index_file(index_file_name.c_str(), ios::out);
+
 
     index_file << total_lines << endl;
     for (size_t i = 0; i < chunk_positions.size(); ++i)
@@ -125,7 +145,6 @@ int create_grabix_index(string bgzf_file)
 
     return EXIT_SUCCESS;
 }
-
 
 /*
 Load an existing gbi index for the file to facilitate
@@ -143,6 +162,9 @@ void load_index(string bgzf_file, index_info &index)
     }
     else {
         string line;
+        getline (index_file, line);
+        index.header_end = atol(line.c_str());
+        
         getline (index_file, line);
         index.num_lines = atol(line.c_str());
 
@@ -189,6 +211,17 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
             cerr << "[grabix] could not open file:" << bgzf_file << endl;
             exit (1);
         }
+        
+        // dump the header if there is one
+        string line;
+        while (bgzf_check_EOF(bgzf_fp) == 1)
+        {
+            bgzf_getline(bgzf_fp, line);
+            if (line.find("#") == 0)
+                cout << line << endl;
+            else break;
+        }
+        
         // easier to work in 0-based space
         size_t from_line_0  = from_line - 1;
         // get the chunk index for the requested line
@@ -198,7 +231,6 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         
         // jump to the correct offset for the relevant chunk
         // and fast forward until we find the requested line    
-        string line;
         bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
         while (chunk_line_start <= from_line_0)
         {
