@@ -77,6 +77,19 @@ void bgzf_getline (BGZF * stream, string & line)
     free (p);
 }
 
+bool bgzf_getline_counting(BGZF * stream)
+{
+    int c = -1;
+    while (true)
+    {
+        c = bgzf_getc (stream);
+        if (c == -1)
+            return true;
+        else if (c == 10) // \n
+            return false; 
+    }
+}
+
 /*
 Create a gbi index for the file to facilitate
 random access via the BGZF seek utility
@@ -107,7 +120,6 @@ int create_grabix_index(string bgzf_file)
         prev_offset = offset;
     }
     index_file << prev_offset << endl;
-    
 
     // add the offsets for each CHUNK_SIZE
     // set of records to the index
@@ -115,15 +127,16 @@ int create_grabix_index(string bgzf_file)
     int64_t total_lines = 0;
     vector<int64_t> chunk_positions;
     chunk_positions.push_back (prev_offset);
+    bool eof = false;
     while (bgzf_check_EOF(bgzf_fp) == 1)
     {
         // grab the next line and store the offset
-        bgzf_getline(bgzf_fp, line);
+        eof = bgzf_getline_counting(bgzf_fp);
         offset = bgzf_tell (bgzf_fp);
         chunk_count++;
         total_lines++;
         // stop if we have encountered an empty line
-        if (line.empty())
+        if (eof)
             break;
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE) 
