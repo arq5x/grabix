@@ -40,42 +40,6 @@ int usage()
     return EXIT_SUCCESS;
 }
 
-/*
-Helper function to allow reading a single line
-from the BGZF file.
-
-Based on:
-http://biostars.org/post/show/13595/
-random-access-of-lines-in-a-compressed-file-having-a-custom-tabulated-format/#13616
-*/
-void bgzf_getline (BGZF * stream, string & line)
-{
-    line.erase();
-    int c = -1, i = 0;
-    char * p = (char *) malloc (1);
-    if (p == NULL)
-    {
-        fprintf (stderr, "ERROR: can't allocate memory\n");
-        exit (1);
-    }
-    while (true)
-    {
-        ++i;
-        c = bgzf_getc (stream);
-        if (c == -2)
-        {
-            fprintf (stderr, "ERROR: can't read %i-th character\n", i);
-            exit (1);
-        }
-        if (c == -1) // reach end of file
-            break;
-        else if (c == 10) // \n
-            break; 
-        sprintf (p, "%c", c);
-        line.append(p);
-    }
-    free (p);
-}
 
 bool bgzf_getline_counting(BGZF * stream)
 {
@@ -108,15 +72,16 @@ int create_grabix_index(string bgzf_file)
     ofstream index_file(index_file_name.c_str(), ios::out);
     
     // add the offset for the end of the header to the index
-    string line;
+
+    int status;
+    kstring_t *line = new kstring_t;
+
     int64_t prev_offset, offset = 0;
-    while (bgzf_check_EOF(bgzf_fp) == 1)
+    while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
     {
-        bgzf_getline(bgzf_fp, line);
         offset = bgzf_tell (bgzf_fp);
-        if (line.find("#") != 0) {
+        if (line->s[0] != '#')
             break;
-        }
         prev_offset = offset;
     }
     index_file << prev_offset << endl;
@@ -217,6 +182,7 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         exit(1);
     }
     else {
+        
         // load the BGZF file
         BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
         if (bgzf_fp == NULL)
@@ -226,12 +192,16 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         }
         
         // dump the header if there is one
-        string line;
-        while (bgzf_check_EOF(bgzf_fp) == 1)
+        int status;
+        kstring_t *line = new kstring_t;
+        line->s = '\0';
+        line->l = 0; 
+        line->m = 0; 
+
+        while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
         {
-            bgzf_getline(bgzf_fp, line);
-            if (line.find("#") == 0)
-                cout << line << endl;
+            if (line->s[0] == '#')
+                printf("%s\n", line->s);
             else break;
         }
         
@@ -247,15 +217,14 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
         while (chunk_line_start <= from_line_0)
         {
-            bgzf_getline(bgzf_fp, line);
+            status = bgzf_getline(bgzf_fp, '\n', line);
             chunk_line_start++;
         }
-
         // now, print each line until we reach the end of the requested block
         do
         {
-            printf("%s\n", line.c_str());
-            bgzf_getline (bgzf_fp, line);
+            printf("%s\n", line->s);
+            status = bgzf_getline(bgzf_fp, '\n', line);
             chunk_line_start++;
         } while (chunk_line_start <= to_line);
     }
@@ -293,26 +262,28 @@ int random(string bgzf_file, uint64_t K)
         // reservoir sample
         size_t s, N, result_size;
         vector<string> sample;
-        string line;
+        kstring_t *line;
+        line = new kstring_t;
+        int status;
         while (bgzf_check_EOF(bgzf_fp) == 1)
         {
             // grab the next line and store the offset
-            bgzf_getline(bgzf_fp, line);
+            status = bgzf_getline(bgzf_fp, '\n', line);
             N++;
             
-            if (line.empty())
+            if (status < 0)
                 break;
 
             if (result_size < K)
             {
-                sample.push_back(line);
+                sample.push_back(line->s);
                 result_size++;
             }
             else 
             {
                 s = (int) ((double)rand()/(double)RAND_MAX * N);
                 if (s < K)
-                    sample[s] = line;
+                    sample[s] = line->s;
             }
         }
         bgzf_close(bgzf_fp);
