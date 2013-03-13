@@ -75,7 +75,10 @@ int create_grabix_index(string bgzf_file)
 
     int status;
     kstring_t *line = new kstring_t;
-
+    line->s = '\0';
+    line->l = 0;
+    line->m = 0;
+    
     int64_t prev_offset, offset = 0;
     while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
     {
@@ -111,8 +114,6 @@ int create_grabix_index(string bgzf_file)
         }
     }
     bgzf_close(bgzf_fp);
-
-
 
     index_file << total_lines << endl;
     for (size_t i = 0; i < chunk_positions.size(); ++i)

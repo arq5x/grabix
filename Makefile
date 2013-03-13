@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -o grabix grabix.cpp bgzf.c -lstdc++ -lz
+	gcc -Wall -O2 -o grabix grabix.cpp bgzf.c -lstdc++ -lz
