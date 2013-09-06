@@ -262,9 +262,9 @@ int random(string bgzf_file, uint64_t K)
         srand(seed);
         
         // reservoir sample
-        size_t s = 0;
-        size_t N = 0;
-        size_t result_size = 0;
+        uint64_t s = 0;
+        uint64_t N = 0;
+        uint64_t result_size = 0;
         vector<string> sample;
         int status;
         kstring_t *line = new kstring_t;
