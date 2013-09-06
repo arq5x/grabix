@@ -79,7 +79,8 @@ int create_grabix_index(string bgzf_file)
     line->l = 0;
     line->m = 0;
     
-    int64_t prev_offset, offset = 0;
+    int64_t prev_offset = 0;
+    int64_t offset = 0;
     while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
     {
         offset = bgzf_tell (bgzf_fp);
@@ -261,15 +262,25 @@ int random(string bgzf_file, uint64_t K)
         srand(seed);
         
         // reservoir sample
-        size_t s, N, result_size;
+        size_t s = 0;
+        size_t N = 0;
+        size_t result_size = 0;
         vector<string> sample;
-        kstring_t *line;
-        line = new kstring_t;
         int status;
-        while (bgzf_check_EOF(bgzf_fp) == 1)
+        kstring_t *line = new kstring_t;
+        line->s = '\0';
+        line->l = 0; 
+        line->m = 0;
+
+        while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
         {
-            // grab the next line and store the offset
-            status = bgzf_getline(bgzf_fp, '\n', line);
+            if (line->s[0] == '#')
+                printf("%s\n", line->s);
+            else break;
+        }
+
+        while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
+        {
             N++;
             
             if (status < 0)
