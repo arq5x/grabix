@@ -38,3 +38,7 @@ You can also use ``grabix`` to extract random lines from the file
 
 	# extract 10 randome lines from the file using reservoir sampling
 	grabix random simrep.chr1.bed.gz 10
+    
+Is a gzipped file bgzipped?
+
+    grabix check simrep.chr1.bed.gz
