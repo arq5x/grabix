@@ -7,6 +7,7 @@ using namespace std;
 #include "bgzf.h"
 
 
+#define VERSION "0.1"
 // we only want to store the offset for every 10000th
 // line. otherwise, were we to store the position of every
 // line in the file, the index could become very large for
@@ -36,6 +37,10 @@ int usage()
     cout << endl;
     cout << "       # extract the 100 random lines." << endl;
     cout << "       grabix random big.vcf.gz 100" << endl;
+    cout << endl;
+    cout << "       # Is the file bgzipped?" << endl;
+    cout << "       grabix check big.vcf.gz" << endl;
+    cout << "version: " << VERSION << "\n";
     cout << endl;
     return EXIT_SUCCESS;
 }
@@ -334,6 +339,10 @@ int main (int argc, char **argv)
         {
             size_t N = atoi(argv[3]);
             random(bgzf_file, N);
+        }
+        else if (sub_command == "check")
+        {
+          cout << ((bgzf_is_bgzf(bgzf_file.c_str()) == 1) ? "yes" : "no") << "\n";
         }
     }
 
