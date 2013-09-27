@@ -7,7 +7,7 @@ using namespace std;
 #include "bgzf.h"
 
 
-#define VERSION "0.1"
+#define VERSION "0.1.1"
 // we only want to store the offset for every 10000th
 // line. otherwise, were we to store the position of every
 // line in the file, the index could become very large for
@@ -102,7 +102,7 @@ int create_grabix_index(string bgzf_file)
     vector<int64_t> chunk_positions;
     chunk_positions.push_back (prev_offset);
     bool eof = false;
-    while (bgzf_check_EOF(bgzf_fp) == 1)
+    while (true)
     {
         // grab the next line and store the offset
         eof = bgzf_getline_counting(bgzf_fp);
@@ -111,7 +111,10 @@ int create_grabix_index(string bgzf_file)
         total_lines++;
         // stop if we have encountered an empty line
         if (eof)
-            break;
+        {
+            if (bgzf_check_EOF(bgzf_fp) == 1)
+                break;
+        }
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE) 
         {
