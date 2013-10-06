@@ -7,7 +7,7 @@ using namespace std;
 #include "bgzf.h"
 
 
-#define VERSION "0.1.1"
+#define VERSION "0.1.2"
 // we only want to store the offset for every 10000th
 // line. otherwise, were we to store the position of every
 // line in the file, the index could become very large for
@@ -168,7 +168,7 @@ void load_index(string bgzf_file, index_info &index)
 /*
 Extract lines [FROM, TO] from file.
 */
-int grab(string bgzf_file, size_t from_line, size_t to_line)
+int grab(string bgzf_file, int64_t from_line, int64_t to_line)
 {
     // load index into vector of offsets
     index_info index;
@@ -183,7 +183,7 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
     }
     else if (from_line < 0) 
     {
-        cerr << "[grabix] requested line exceeds the number of lines in the file." << endl;
+        cerr << "[grabix] indexes must be positive numbers." << endl;
         exit(1);
     }
     else if (from_line > to_line) 
@@ -216,11 +216,11 @@ int grab(string bgzf_file, size_t from_line, size_t to_line)
         }
         
         // easier to work in 0-based space
-        size_t from_line_0  = from_line - 1;
+        int64_t from_line_0  = from_line - 1;
         // get the chunk index for the requested line
-        size_t requested_chunk = from_line_0 / CHUNK_SIZE;
+        int64_t requested_chunk = from_line_0 / CHUNK_SIZE;
         // derive the first line in that chunk
-        size_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
+        int64_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
         
         // jump to the correct offset for the relevant chunk
         // and fast forward until we find the requested line    
@@ -331,10 +331,10 @@ int main (int argc, char **argv)
         }
         else if (sub_command == "grab")
         {
-            size_t from_line = atoi(argv[3]);
-            size_t to_line = from_line;
+            int64_t from_line = atol(argv[3]);
+            int64_t to_line = from_line;
             if (argc == 5)
-                to_line = atoi(argv[4]);
+                to_line = atol(argv[4]);
 
             grab(bgzf_file, from_line, to_line);
         }
