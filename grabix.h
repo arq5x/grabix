@@ -45,3 +45,24 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line);
 Extract K random lines from file using reservoir sampling
 */
 int random(string bgzf_file, uint64_t K);
+
+/*
+Load index, open file, dump header.  Ready to jump to a line and read
+*/
+int bgzf_init(string bgzf_file, index_info &index, BGZF **bgzf_fp);
+
+/*
+Print lines from and open file (after init)
+*/
+int print_lines(index_info &index,
+              BGZF *bgzf_fp,
+              int64_t from_line,
+              int64_t to_line);
+
+/*
+Get a line from and open file (after init)
+*/
+size_t get_line(index_info &index,
+                BGZF *bgzf_fp,
+                int64_t line_num,
+                char **line_s);
