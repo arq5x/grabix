@@ -105,10 +105,12 @@ int create_grabix_index(string bgzf_file)
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE) 
         {
-            chunk_positions.push_back(offset);
+            chunk_positions.push_back(prev_offset);
             chunk_count = 0;
         }
+        prev_offset = offset;
     }
+    chunk_positions.push_back (prev_offset);
     bgzf_close(bgzf_fp);
 
     index_file << total_lines << endl;
