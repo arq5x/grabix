@@ -155,6 +155,117 @@ void load_index(string bgzf_file, index_info &index)
 }
 
 
+int bgzf_init(string bgzf_file,
+              index_info &index,
+              BGZF **bgzf_fp)
+{
+    //index_info index;
+    load_index(bgzf_file, index);
+
+    //BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
+    *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
+    if (*bgzf_fp == NULL)
+    {
+        cerr << "[grabix] could not open file:" << bgzf_file << endl;
+        return 1;
+    }
+    
+
+    // dump the header if there is one
+    int status;
+    kstring_t *line = new kstring_t;
+    line->s = '\0';
+    line->l = 0; 
+    line->m = 0; 
+
+    while ((status = bgzf_getline(*bgzf_fp, '\n', line)) != 0)
+    {
+        if (line->s[0] == '#')
+            printf("%s\n", line->s);
+        else break;
+    }
+
+    free(line);
+    return 0;
+}
+
+
+/*
+Get a line from an open file
+*/
+size_t get_line(index_info &index,
+                BGZF *bgzf_fp,
+                int64_t line_num,
+                char **line_s)
+{
+    // easier to work in 0-based space
+    int64_t line_num_0  = line_num - 1;
+    // get the chunk index for the requested line
+    int64_t requested_chunk = line_num_0 / CHUNK_SIZE;
+    // derive the first line in that chunk
+    int64_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
+
+    int status;
+    kstring_t *line = new kstring_t;
+
+    // jump to the correct offset for the relevant chunk
+    // and fast forward until we find the requested line    
+    bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
+    while (chunk_line_start <= line_num_0)
+    {
+        status = bgzf_getline(bgzf_fp, '\n', line);
+        chunk_line_start++;
+    }
+
+    *line_s = line->s;
+    size_t len = line->l;
+
+    return len;
+}
+
+
+/*
+Get a line from an open file
+*/
+int print_lines(index_info &index,
+                BGZF *bgzf_fp,
+                int64_t from_line,
+                int64_t to_line)
+{
+    // easier to work in 0-based space
+    int64_t from_line_0  = from_line - 1;
+    // get the chunk index for the requested line
+    int64_t requested_chunk = from_line_0 / CHUNK_SIZE;
+    // derive the first line in that chunk
+    int64_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
+
+    int status;
+    kstring_t *line = new kstring_t;
+
+    // jump to the correct offset for the relevant chunk
+    // and fast forward until we find the requested line    
+    bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
+    while (chunk_line_start <= from_line_0)
+    {
+        status = bgzf_getline(bgzf_fp, '\n', line);
+        chunk_line_start++;
+    }
+    // now, print each line until we reach the end of the requested block
+    do
+    {
+        printf("%s\n", line->s);
+        //printf("%s\t%lu\t%lu\n", line->s, line->l, line->m);
+        status = bgzf_getline(bgzf_fp, '\n', line);
+        chunk_line_start++;
+    } while (chunk_line_start <= to_line);
+
+    free(line);
+
+    return 0;
+}
+
+
+
 /*
 Extract lines [FROM, TO] from file.
 */
