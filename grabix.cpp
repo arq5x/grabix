@@ -28,6 +28,9 @@ int usage()
     cout << endl;
     cout << "       # Is the file bgzipped?" << endl;
     cout << "       grabix check big.vcf.gz" << endl;
+    cout << endl;
+    cout << "       # get total number of lines in the file (minus the header)." << endl;
+    cout << "       grabix size big.vcf.gz" << endl;
     cout << "version: " << VERSION << "\n";
     cout << endl;
     return EXIT_SUCCESS;
@@ -304,4 +307,15 @@ int random(string bgzf_file, uint64_t K)
 
     }
     return EXIT_SUCCESS;
+}
+
+/*
+Return the total number of records in the index.
+*/
+int size(string bgzf_file)
+{
+  index_info index;
+  load_index(bgzf_file, index);
+
+  return index.num_lines;
 }
