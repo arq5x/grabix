@@ -38,6 +38,10 @@ int main (int argc, char **argv)
         {
           cout << ((bgzf_is_bgzf(bgzf_file.c_str()) == 1) ? "yes" : "no") << "\n";
         }
+        else if (sub_command == "size")
+        {
+          cout << size(bgzf_file) << "\n";
+        }
     }
 
     return EXIT_SUCCESS;
