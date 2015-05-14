@@ -42,7 +42,7 @@ int main (int argc, char **argv)
         {
           cout << size(bgzf_file) << "\n";
         } else {
-          cout << "unknown command:" << sub_command << endl;
+          cout << "unknown command: " << sub_command << endl;
           cout << "available commands are: index, grab, random, check, size" << endl;
         }
     }
