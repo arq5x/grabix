@@ -10,7 +10,7 @@ using namespace std;
 int main (int argc, char **argv)
 {
     if (argc == 1) { return usage(); }
-    if (argc >= 3) 
+    if (argc >= 3)
     {
         // create input file for the purpose of the example
         string bgzf_file = argv[2];
@@ -41,6 +41,9 @@ int main (int argc, char **argv)
         else if (sub_command == "size")
         {
           cout << size(bgzf_file) << "\n";
+        } else {
+          cout << "unknown command:" << sub_command << endl;
+          cout << "available commands are: index, grab, random, check, size" << endl;
         }
     }
 
