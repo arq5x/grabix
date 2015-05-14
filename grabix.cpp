@@ -46,7 +46,7 @@ bool bgzf_getline_counting(BGZF * stream)
         if (c == -1)
             return true;
         else if (c == 10) // \n
-            return false; 
+            return false;
     }
 }
 
@@ -62,11 +62,11 @@ int create_grabix_index(string bgzf_file)
         cerr << "[grabix] could not open file:" << bgzf_file << endl;
         exit (1);
     }
-    
+
     // create an index for writing
     string index_file_name = bgzf_file + ".gbi";
     ofstream index_file(index_file_name.c_str(), ios::out);
-    
+
     // add the offset for the end of the header to the index
 
     int status;
@@ -74,7 +74,7 @@ int create_grabix_index(string bgzf_file)
     line->s = '\0';
     line->l = 0;
     line->m = 0;
-    
+
     int64_t prev_offset = 0;
     int64_t offset = 0;
     while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
@@ -89,7 +89,7 @@ int create_grabix_index(string bgzf_file)
     // add the offsets for each CHUNK_SIZE
     // set of records to the index
     size_t chunk_count = 0;
-    int64_t total_lines = 0;
+    int64_t total_lines = 1;
     vector<int64_t> chunk_positions;
     chunk_positions.push_back (prev_offset);
     bool eof = false;
@@ -98,20 +98,25 @@ int create_grabix_index(string bgzf_file)
         // grab the next line and store the offset
         eof = bgzf_getline_counting(bgzf_fp);
         offset = bgzf_tell (bgzf_fp);
-        chunk_count++;
-        total_lines++;
         // stop if we have encountered an empty line
         if (eof)
         {
-            if (bgzf_check_EOF(bgzf_fp) == 1)
+            if (bgzf_check_EOF(bgzf_fp) == 1) {
+                if (offset > prev_offset) {
+                    total_lines++;
+					//prev_offset = offset;
+                }
                 break;
+            }
         }
         // store the offset of this chunk start
-        else if (chunk_count == CHUNK_SIZE) 
+        else if (chunk_count == CHUNK_SIZE)
         {
             chunk_positions.push_back(prev_offset);
             chunk_count = 0;
         }
+        chunk_count++;
+        total_lines++;
         prev_offset = offset;
     }
     chunk_positions.push_back (prev_offset);
@@ -138,14 +143,14 @@ void load_index(string bgzf_file, index_info &index)
     ifstream index_file(index_file_name.c_str(), ios::in);
 
     if ( !index_file ) {
-        cerr << "[grabix] coould not find index file: " << index_file_name << ". Exiting!" << endl;
+        cerr << "[grabix] could not find index file: " << index_file_name << ". Exiting!" << endl;
         exit (1);
     }
     else {
         string line;
         getline (index_file, line);
         index.header_end = atol(line.c_str());
-        
+
         getline (index_file, line);
         index.num_lines = atol(line.c_str());
 
@@ -167,25 +172,25 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
     index_info index;
     load_index(bgzf_file, index);
 
-    if (((int) from_line > index.num_lines) 
-        || 
+    if (((int) from_line > index.num_lines)
+        ||
         ((int) to_line > index.num_lines))
     {
         cerr << "[grabix] requested lines exceed the number of lines in the file." << endl;
         exit(1);
     }
-    else if (from_line < 0) 
+    else if (from_line < 0)
     {
         cerr << "[grabix] indexes must be positive numbers." << endl;
         exit(1);
     }
-    else if (from_line > to_line) 
+    else if (from_line > to_line)
     {
         cerr << "[grabix] requested end line is less than the requested begin line." << endl;
         exit(1);
     }
     else {
-        
+
         // load the BGZF file
         BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
         if (bgzf_fp == NULL)
@@ -193,13 +198,13 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
             cerr << "[grabix] could not open file:" << bgzf_file << endl;
             exit (1);
         }
-        
+
         // dump the header if there is one
         int status;
         kstring_t *line = new kstring_t;
         line->s = '\0';
-        line->l = 0; 
-        line->m = 0; 
+        line->l = 0;
+        line->m = 0;
 
         while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
         {
@@ -207,17 +212,17 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
                 printf("%s\n", line->s);
             else break;
         }
-        
+
         // easier to work in 0-based space
         int64_t from_line_0  = from_line - 1;
         // get the chunk index for the requested line
         int64_t requested_chunk = from_line_0 / CHUNK_SIZE;
         // derive the first line in that chunk
         int64_t chunk_line_start = (requested_chunk * CHUNK_SIZE);
-        
+
         // jump to the correct offset for the relevant chunk
-        // and fast forward until we find the requested line    
-        bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);        
+        // and fast forward until we find the requested line
+        bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);
         while (chunk_line_start <= from_line_0)
         {
             status = bgzf_getline(bgzf_fp, '\n', line);
@@ -244,7 +249,7 @@ int random(string bgzf_file, uint64_t K)
     index_info index;
     load_index(bgzf_file, index);
 
-    if ((int64_t) K > index.num_lines) 
+    if ((int64_t) K > index.num_lines)
     {
         cerr << "[grabix] warning: requested more lines than in the file." << endl;
         exit(1);
@@ -257,11 +262,11 @@ int random(string bgzf_file, uint64_t K)
             cerr << "[grabix] could not open file:" << bgzf_file << endl;
             exit (1);
         }
-        
+
         // seed our random number generator
         size_t seed = (unsigned)time(0)+(unsigned)getpid();
         srand(seed);
-        
+
         // reservoir sample
         uint64_t s = 0;
         uint64_t N = 0;
@@ -270,7 +275,7 @@ int random(string bgzf_file, uint64_t K)
         int status;
         kstring_t *line = new kstring_t;
         line->s = '\0';
-        line->l = 0; 
+        line->l = 0;
         line->m = 0;
 
         while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
@@ -283,7 +288,7 @@ int random(string bgzf_file, uint64_t K)
         while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
         {
             N++;
-            
+
             if (status < 0)
                 break;
 
@@ -292,7 +297,7 @@ int random(string bgzf_file, uint64_t K)
                 sample.push_back(line->s);
                 result_size++;
             }
-            else 
+            else
             {
                 s = (int) ((double)rand()/(double)RAND_MAX * N);
                 if (s < K)
@@ -300,7 +305,7 @@ int random(string bgzf_file, uint64_t K)
             }
         }
         bgzf_close(bgzf_fp);
-        
+
         // report the sample
         for (size_t i = 0; i < sample.size(); ++i)
             printf("%s\n", sample[i].c_str());
