@@ -1,5 +1,19 @@
 make
 
+FQ=test.cnt.gz
+rm -f ${FQ}{,.gbi}
+
+lines=50000
+python tests/make-test-fastq.py $lines | bgzip -c > $FQ
+./grabix index $FQ
+python tests/test-fastq.py $FQ
+a=$(grabix grab test.cnt.gz $(($lines * 4)))
+b=$(zless $FQ | tail -1)
+if [[ "$a" != "$b" ]]; then
+	echo FAIL last record
+fi
+rm -f ${FQ}{,.gbi}
+
 for V in  \
 	test.PLs.vcf \
 	test.auto_dom.no_parents.2.vcf \

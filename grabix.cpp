@@ -98,13 +98,14 @@ int create_grabix_index(string bgzf_file)
         // grab the next line and store the offset
         eof = bgzf_getline_counting(bgzf_fp);
         offset = bgzf_tell (bgzf_fp);
+        chunk_count++;
         // stop if we have encountered an empty line
         if (eof)
         {
             if (bgzf_check_EOF(bgzf_fp) == 1) {
                 if (offset > prev_offset) {
                     total_lines++;
-					//prev_offset = offset;
+                    prev_offset = offset;
                 }
                 break;
             }
@@ -115,7 +116,6 @@ int create_grabix_index(string bgzf_file)
             chunk_positions.push_back(prev_offset);
             chunk_count = 0;
         }
-        chunk_count++;
         total_lines++;
         prev_offset = offset;
     }
