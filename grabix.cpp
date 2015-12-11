@@ -56,10 +56,16 @@ random access via the BGZF seek utility
 */
 int create_grabix_index(string bgzf_file)
 {
+    if (!bgzf_is_bgzf(bgzf_file.c_str()))
+    {
+        cerr << "[grabix] " << bgzf_file << " doesn't exist or wasn't compressed with bgzip" << endl;
+        exit (1);
+    }
+
     BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
     if (bgzf_fp == NULL)
     {
-        cerr << "[grabix] could not open file:" << bgzf_file << endl;
+        cerr << "[grabix] could not open file: " << bgzf_file << endl;
         exit (1);
     }
 
@@ -195,7 +201,7 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
         BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
         if (bgzf_fp == NULL)
         {
-            cerr << "[grabix] could not open file:" << bgzf_file << endl;
+            cerr << "[grabix] could not open file: " << bgzf_file << endl;
             exit (1);
         }
 
@@ -259,7 +265,7 @@ int random(string bgzf_file, uint64_t K)
         BGZF *bgzf_fp = bgzf_open(bgzf_file.c_str(), "r");
         if (bgzf_fp == NULL)
         {
-            cerr << "[grabix] could not open file:" << bgzf_file << endl;
+            cerr << "[grabix] could not open file: " << bgzf_file << endl;
             exit (1);
         }
 
