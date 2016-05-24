@@ -98,15 +98,15 @@ int create_grabix_index(string bgzf_file)
     int64_t total_lines = 1;
     vector<int64_t> chunk_positions;
     chunk_positions.push_back (prev_offset);
-    bool eof = false;
+    int eof = 1;
     while (true)
     {
         // grab the next line and store the offset
-        eof = bgzf_getline_counting(bgzf_fp);
+        eof = bgzf_getline(bgzf_fp, '\n', line);
         offset = bgzf_tell (bgzf_fp);
         chunk_count++;
         // stop if we have encountered an empty line
-        if (eof)
+        if (eof <= 0)
         {
             if (bgzf_check_EOF(bgzf_fp) == 1) {
                 if (offset > prev_offset) {
@@ -115,6 +115,7 @@ int create_grabix_index(string bgzf_file)
                 }
                 break;
             }
+            break;
         }
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE)
