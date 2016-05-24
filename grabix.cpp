@@ -115,7 +115,7 @@ int create_grabix_index(string bgzf_file)
                 }
                 break;
             }
-            break;
+            //break;
         }
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE)
