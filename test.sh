@@ -3,9 +3,11 @@ make
 FQ=test.cnt.gz
 rm -f ${FQ}{,.gbi}
 
-lines=50000
+lines=500000
 python tests/make-test-fastq.py $lines | bgzip -c > $FQ
-./grabix index $FQ
+echo "indexing"
+time ./grabix index $FQ
+echo "indexed"
 python tests/test-fastq.py $FQ
 a=$(grabix grab test.cnt.gz $(($lines * 4)))
 b=$(zless $FQ | tail -1)
