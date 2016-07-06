@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <iostream>
+#include <stdio.h>
 #include <fstream>
 #include <vector>
 #include <unistd.h>
@@ -70,7 +71,7 @@ int create_grabix_index(string bgzf_file)
     }
 
     // create an index for writing
-    string index_file_name = bgzf_file + ".gbi";
+    string index_file_name = bgzf_file + ".gbi.tmp";
     ofstream index_file(index_file_name.c_str(), ios::out);
 
     // add the offset for the end of the header to the index
@@ -136,7 +137,7 @@ int create_grabix_index(string bgzf_file)
     }
     index_file.close();
 
-    return EXIT_SUCCESS;
+    return std::rename((bgzf_file + ".gbi.tmp").c_str(), (bgzf_file + ".gbi").c_str());
 }
 
 /*
