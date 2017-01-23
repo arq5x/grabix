@@ -9,7 +9,7 @@ echo "indexing"
 time ./grabix index $FQ
 echo "indexed"
 python tests/test-fastq.py $FQ
-a=$(grabix grab test.cnt.gz $(($lines * 4)))
+a=$(./grabix grab test.cnt.gz $(($lines * 4)))
 b=$(zless $FQ | tail -1)
 if [[ "$a" != "$b" ]]; then
 	echo FAIL last record
