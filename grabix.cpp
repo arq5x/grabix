@@ -86,7 +86,7 @@ int create_grabix_index(string bgzf_file)
     int64_t offset = 0;
     while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
     {
-        offset = bgzf_tell (bgzf_fp);
+        offset = bgzf_tell(bgzf_fp);
         if (line->s[0] != '#')
             break;
         prev_offset = offset;
@@ -116,7 +116,7 @@ int create_grabix_index(string bgzf_file)
                 }
                 break;
             }
-            //break;
+            break;
         }
         // store the offset of this chunk start
         else if (chunk_count == CHUNK_SIZE)
