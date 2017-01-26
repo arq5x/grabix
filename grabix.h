@@ -7,7 +7,7 @@ using namespace std;
 #include "bgzf.h"
 
 
-#define VERSION "0.1.7"
+#define VERSION "0.1.8"
 // we only want to store the offset for every 10000th
 // line. otherwise, were we to store the position of every
 // line in the file, the index could become very large for
