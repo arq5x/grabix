@@ -2,9 +2,6 @@ language: c
 compiler: gcc
 addons:
   apt:
-#From own trusty
-#    sources:
-#      - xenial
-      packages:
+    packages:
       - zlib1g-dev
       - libbz2-dev
