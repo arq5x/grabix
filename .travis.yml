@@ -1,0 +1,10 @@
+language: c
+compiler: gcc
+addons:
+  apt:
+#From own trusty
+#    sources:
+#      - xenial
+      packages:
+      - zlib1g-dev
+      - libbz2-dev
