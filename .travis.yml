@@ -5,5 +5,5 @@ addons:
     packages:
       - zlib1g-dev
       - libbz2-dev
-script
+script:
   make && ls -alh && md5sum *
