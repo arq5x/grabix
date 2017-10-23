@@ -13,8 +13,24 @@ a=$(./grabix grab test.cnt.gz $(($lines * 4)))
 b=$(zless $FQ | tail -1)
 if [[ "$a" != "$b" ]]; then
 	echo FAIL last record
+    exit 1
+else
+	echo OK last record
 fi
 rm -f ${FQ}{,.gbi}
+
+rm -f tests/empty.fastq.gz.gbi
+./grabix index tests/empty.fastq.gz
+
+a=$(cat tests/empty.fastq.gz.gbi | awk 'NR == 2')
+if [[ "$a" != "16" ]]; then
+    echo FAIL index wrong size
+    exit 1
+else
+    echo "OK index size"
+fi
+
+
 
 for V in  \
 	test.PLs.vcf \
