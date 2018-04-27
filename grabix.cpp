@@ -276,7 +276,6 @@ int random(string bgzf_file, uint64_t K)
         srand(seed);
 
         // reservoir sample
-        uint64_t s = 0;
         uint64_t N = 0;
         uint64_t result_size = 0;
         vector<string> sample;
@@ -307,7 +306,7 @@ int random(string bgzf_file, uint64_t K)
             }
             else
             {
-                s = (int) ((double)rand()/(double)RAND_MAX * N);
+                uint64_t s = (uint64_t) ((double)rand()/(double)RAND_MAX * N);
                 if (s < K)
                     sample[s] = line->s;
             }
