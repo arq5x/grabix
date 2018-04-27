@@ -78,7 +78,7 @@ int create_grabix_index(string bgzf_file)
 
     int status;
     kstring_t *line = new kstring_t;
-    line->s = '\0';
+    line->s = (char *) 0;
     line->l = 0;
     line->m = 0;
 
@@ -210,7 +210,7 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
         // dump the header if there is one
         int status;
         kstring_t *line = new kstring_t;
-        line->s = '\0';
+        line->s = (char *) 0;
         line->l = 0;
         line->m = 0;
 
@@ -282,7 +282,7 @@ int random(string bgzf_file, uint64_t K)
         vector<string> sample;
         int status;
         kstring_t *line = new kstring_t;
-        line->s = '\0';
+        line->s = (char *) 0;
         line->l = 0;
         line->m = 0;
 
