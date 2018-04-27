@@ -1,2 +1,11 @@
-all:
-	gcc -Wall -O2 -o grabix grabix_main.cpp grabix.cpp bgzf.c -lstdc++ -lz
+CFLAGS ?= -Wall -O2
+LDFLAGS += -lstdc++ -lz
+
+# activating Link-time optimization
+CFLAGS += -flto
+LDFLAGS += -Wl,-flto
+
+all: grabix
+
+grabix: grabix_main.cpp grabix.cpp bgzf.c grabix.h bgzf.h
+	gcc $(CFLAGS) -o grabix grabix_main.cpp grabix.cpp bgzf.c $(LDFLAGS)
