@@ -77,17 +77,13 @@ int create_grabix_index(string bgzf_file)
     // add the offset for the end of the header to the index
 
     int status;
-    kstring_t *line = new kstring_t;
-    line->s = (char *) 0;
-    line->l = 0;
-    line->m = 0;
-
+    kstring_t line = { 0, 0, NULL };
     int64_t prev_offset = 0;
     int64_t offset = 0;
-    while ((status = bgzf_getline(bgzf_fp, '\n', line)) >= 0)
+    while ((status = bgzf_getline(bgzf_fp, '\n', &line)) >= 0)
     {
         offset = bgzf_tell(bgzf_fp);
-        if (line->s[0] != '#')
+        if (line.s[0] != '#')
             break;
         prev_offset = offset;
     }
@@ -103,7 +99,7 @@ int create_grabix_index(string bgzf_file)
     while (true)
     {
         // grab the next line and store the offset
-        eof = bgzf_getline(bgzf_fp, '\n', line);
+        eof = bgzf_getline(bgzf_fp, '\n', &line);
         offset = bgzf_tell(bgzf_fp);
         chunk_count++;
         // stop if we have encountered an empty line
@@ -129,6 +125,7 @@ int create_grabix_index(string bgzf_file)
     }
     chunk_positions.push_back (prev_offset);
     bgzf_close(bgzf_fp);
+    free(line.s);
 
     index_file << total_lines << endl;
     for (size_t i = 0; i < chunk_positions.size(); ++i)
@@ -209,15 +206,12 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
 
         // dump the header if there is one
         int status;
-        kstring_t *line = new kstring_t;
-        line->s = (char *) 0;
-        line->l = 0;
-        line->m = 0;
+        kstring_t line = { 0, 0, NULL };
 
-        while ((status = bgzf_getline(bgzf_fp, '\n', line)) > 0)
+        while ((status = bgzf_getline(bgzf_fp, '\n', &line)) > 0)
         {
-            if (line->s[0] == '#')
-                printf("%s\n", line->s);
+            if (line.s[0] == '#')
+                printf("%s\n", line.s);
             else break;
         }
 
@@ -233,16 +227,19 @@ int grab(string bgzf_file, int64_t from_line, int64_t to_line)
         bgzf_seek (bgzf_fp, index.chunk_offsets[requested_chunk], SEEK_SET);
         while (chunk_line_start <= from_line_0)
         {
-            status = bgzf_getline(bgzf_fp, '\n', line);
+            status = bgzf_getline(bgzf_fp, '\n', &line);
             chunk_line_start++;
         }
         // now, print each line until we reach the end of the requested block
         do
         {
-            printf("%s\n", line->s);
-            status = bgzf_getline(bgzf_fp, '\n', line);
+            printf("%s\n", line.s);
+            status = bgzf_getline(bgzf_fp, '\n', &line);
             chunk_line_start++;
         } while (chunk_line_start <= to_line);
+
+        bgzf_close(bgzf_fp);
+        free(line.s);
     }
     return EXIT_SUCCESS;
 }
@@ -280,19 +277,16 @@ int random(string bgzf_file, uint64_t K)
         uint64_t result_size = 0;
         vector<string> sample;
         int status;
-        kstring_t *line = new kstring_t;
-        line->s = (char *) 0;
-        line->l = 0;
-        line->m = 0;
+        kstring_t line = { 0, 0, NULL };
 
-        while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
+        while ((status = bgzf_getline(bgzf_fp, '\n', &line)) != 0)
         {
-            if (line->s[0] == '#')
-                printf("%s\n", line->s);
+            if (line.s[0] == '#')
+                printf("%s\n", line.s);
             else break;
         }
 
-        while ((status = bgzf_getline(bgzf_fp, '\n', line)) != 0)
+        while ((status = bgzf_getline(bgzf_fp, '\n', &line)) != 0)
         {
             N++;
 
@@ -301,17 +295,18 @@ int random(string bgzf_file, uint64_t K)
 
             if (result_size < K)
             {
-                sample.push_back(line->s);
+                sample.push_back(line.s);
                 result_size++;
             }
             else
             {
                 uint64_t s = (uint64_t) ((double)rand()/(double)RAND_MAX * N);
                 if (s < K)
-                    sample[s] = line->s;
+                    sample[s] = line.s;
             }
         }
         bgzf_close(bgzf_fp);
+        free(line.s);
 
         // report the sample
         for (size_t i = 0; i < sample.size(); ++i)
