@@ -3,7 +3,6 @@ LDFLAGS += -lstdc++ -lz
 
 # activating Link-time optimization
 CFLAGS += -flto
-LDFLAGS += -Wl,-flto
 
 all: grabix
 
