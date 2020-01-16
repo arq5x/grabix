@@ -1,0 +1,9 @@
+language: cpp
+compiler: gcc
+addons:
+  apt:
+    packages:
+      - zlib1g-dev
+      - libbz2-dev
+script:
+  make
